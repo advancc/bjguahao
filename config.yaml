@@ -12,6 +12,10 @@ date: "2018-01-01"
 # hospitalId: 医院id
 hospitalId: "162"
 
+#是否挂协和医院
+PUMC: "true"
+time_list: ["9:00:00","11:00:00","15:00:00","16:00:00"]
+
 # departmentId: 科室id
 departmentId: "200002248"
 
