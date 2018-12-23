@@ -64,6 +64,8 @@ class Config(object):
                 self.patient_name = data["patientName"]
                 self.doctorName = data["doctorName"]
                 self.patient_id = int()
+                self.isPUMC = data["PUMC"]
+                self.time_list = data["time_list"]
                 try:
                     self.useIMessage = data["useIMessage"]
                 except KeyError:
@@ -387,6 +389,38 @@ class Guahao(object):
                 self.auth_login()
         pass
 
+    def wait_PUMC(self):
+        cur_time = datetime.datetime.now() + datetime.timedelta(seconds=int(time.timezone + 8 * 60 * 60))
+        logging.debug("[协和模式启动]现在的时间："+cur_time.strftime("%y-%m-%d %H:%M:%S"))
+        time_temp = []
+        for i in range(4):
+            target_time = datetime.datetime.strptime(self.config.time_list[i], '%H:%M:%S')
+            if (target_time-cur_time).seconds>0:
+                time_temp.append((target_time-cur_time).seconds)
+        logging.info("[协和]距离最近协和放号时间还剩："+str(min(time_temp)))
+        if min(time_temp) >3:
+            sleep_time =min(time_temp)
+            if sleep_time > 0:
+                logging.info("[协和]程序休眠" + str(sleep_time) + "秒后开始运行")
+                time.sleep(sleep_time)
+                # 自动重新登录
+                self.auth_login()
+        else:
+            logging.info("[协和]今天已经没号了")
+            exit(-1)
+        pass
+        # if self.start_time > cur_time:
+        #     seconds = (self.start_time - cur_time).total_seconds()
+        #     logging.info("距离放号时间还有" + str(seconds) + "秒")
+        #     sleep_time = seconds - 10
+        #     if sleep_time > 0:
+        #         logging.info("程序休眠" + str(sleep_time) + "秒后开始运行")
+        #         time.sleep(sleep_time)
+        #         # 自动重新登录
+        #         self.auth_login()
+        # exit(1)
+        # pass
+
     def run(self):
         """主逻辑"""
         self.get_duty_time()
@@ -401,7 +435,10 @@ class Guahao(object):
                 if self.start_time + datetime.timedelta(seconds=30) < datetime.datetime.now():
                     # 确认无号，终止程序
                     logging.error("没号了,  亲~")
-                    break
+                    if self.config.isPUMC:
+                        self.wait_PUMC()
+                    else:
+                        break
                 else:
                     # 未到时间，强制重试
                     logging.debug("放号时间: " + self.start_time.strftime("%Y-%m-%d %H:%M"))
